@@ -11,7 +11,7 @@ export const adminRouter = router({
         z
           .object({
             status: z.enum(["pending", "reviewed", "dismissed"]).optional(),
-            limit: z.number().optional(),
+            limit: z.number().int().min(1).max(100).default(20),
             cursor: z.string().optional(),
           })
           .optional()
@@ -58,13 +58,13 @@ export const adminRouter = router({
       }),
     suspend: adminProcedure
       .input(z.object({ userId: z.string(), duration: z.number().optional() }))
-      .mutation(async ({ input }) => {
-        return await service.suspendUser(input.userId, input.duration);
+      .mutation(async ({ ctx, input }) => {
+        return await service.suspendUser(ctx.session!.user.id, input.userId, input.duration);
       }),
     unsuspend: adminProcedure
       .input(z.object({ userId: z.string() }))
-      .mutation(async ({ input }) => {
-        return await service.unsuspendUser(input.userId);
+      .mutation(async ({ ctx, input }) => {
+        return await service.unsuspendUser(ctx.session!.user.id, input.userId);
       }),
     updateRole: superAdminProcedure
       .input(z.object({ userId: z.string(), role: z.enum(["member", "admin", "super_admin"]) }))

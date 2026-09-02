@@ -82,8 +82,10 @@ export default function SettingsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-[400px] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[var(--color-accent)] border-t-transparent" />
+      <div className="space-y-6">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="h-48 animate-pulse rounded-xl bg-[var(--color-border)]" />
+        ))}
       </div>
     );
   }

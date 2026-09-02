@@ -20,6 +20,7 @@ import type {
   SettingsData,
 } from "./admin.types";
 import { and, eq, like, lt, desc, sql } from "drizzle-orm";
+import { TRPCError } from "@trpc/server";
 
 function buildWhere(conds: ReturnType<typeof and> | undefined) {
   return conds;
@@ -32,7 +33,13 @@ export async function listReports(
 ): Promise<{ items: ReportWithDetails[]; nextCursor: string | null }> {
   const conditions: ReturnType<typeof and>[] = [];
   if (status) conditions.push(eq(reports.status, status));
-  if (cursor) conditions.push(lt(reports.createdAt, new Date(Number(cursor))));
+  if (cursor) {
+    const cursorTime = new Date(Number(cursor));
+    if (Number.isNaN(cursorTime.getTime())) {
+      throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid report cursor." });
+    }
+    conditions.push(lt(reports.createdAt, cursorTime));
+  }
   const whereClause = conditions.length ? and(...conditions) : undefined;
 
   const rows = await db
@@ -119,7 +126,8 @@ export async function listReports(
 }
 
 export async function updateReportStatus(reportId: string, status: ReportStatus): Promise<{ success: boolean }> {
-  await db.update(reports).set({ status }).where(eq(reports.id, reportId));
+  const [updated] = await db.update(reports).set({ status }).where(eq(reports.id, reportId)).returning({ id: reports.id });
+  if (!updated) throw new TRPCError({ code: "NOT_FOUND", message: "Report not found" });
   return { success: true };
 }
 
@@ -134,9 +142,16 @@ export async function deleteContent(targetType: "post" | "comment", targetId: st
   return { success: true };
 }
 
-export async function suspendUser(userId: string, durationMs?: number): Promise<{ success: boolean }> {
+export async function suspendUser(actorId: string, userId: string, durationMs?: number): Promise<{ success: boolean }> {
   const u = (await db.select().from(users).where(eq(users.id, userId)).then((r) => r[0])) as typeof users.$inferSelect | undefined;
-  if (!u) return { success: false };
+  if (!u) throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+  const actor = await db.select({ globalRole: users.globalRole }).from(users).where(eq(users.id, actorId)).limit(1).then((r) => r[0]);
+  if (actor?.globalRole !== "super_admin" && ["admin", "super_admin"].includes(u.globalRole)) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "Only a super admin can suspend administrators" });
+  }
+  if (durationMs !== undefined && (!Number.isFinite(durationMs) || durationMs <= 0)) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: "Suspension duration must be positive" });
+  }
   const prev = u.globalRole === "suspended" ? (u.previousRole ?? "member") : u.globalRole;
   const suspendedUntil = durationMs ? Number(Date.now() + durationMs) : null;
 
@@ -144,9 +159,13 @@ export async function suspendUser(userId: string, durationMs?: number): Promise<
   return { success: true };
 }
 
-export async function unsuspendUser(userId: string): Promise<{ success: boolean }> {
+export async function unsuspendUser(actorId: string, userId: string): Promise<{ success: boolean }> {
   const u = (await db.select().from(users).where(eq(users.id, userId)).then((r) => r[0])) as typeof users.$inferSelect | undefined;
-  if (!u) return { success: false };
+  if (!u) throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+  const actor = await db.select({ globalRole: users.globalRole }).from(users).where(eq(users.id, actorId)).limit(1).then((r) => r[0]);
+  if (actor?.globalRole !== "super_admin" && ["admin", "super_admin"].includes(u.globalRole)) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "Only a super admin can unsuspend administrators" });
+  }
   const restore = u.previousRole ?? "member";
   await db.update(users).set({ globalRole: restore, previousRole: null, suspendedUntil: null }).where(eq(users.id, userId));
   return { success: true };
@@ -209,7 +228,8 @@ export async function listUsers(
 }
 
 export async function updateUserRole(userId: string, role: string): Promise<{ success: boolean }> {
-  await db.update(users).set({ globalRole: role }).where(eq(users.id, userId));
+  const [updated] = await db.update(users).set({ globalRole: role }).where(eq(users.id, userId)).returning({ id: users.id });
+  if (!updated) throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
   return { success: true };
 }
 

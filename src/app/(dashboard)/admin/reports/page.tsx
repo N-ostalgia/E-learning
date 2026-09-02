@@ -96,8 +96,10 @@ export default function ReportsPage() {
 
   if (isLoading && !reportsQuery.isFetching) {
     return (
-      <div className="flex min-h-[400px] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[var(--color-accent)] border-t-transparent" />
+      <div className="space-y-4">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="h-28 animate-pulse rounded-xl bg-[var(--color-border)]" />
+        ))}
       </div>
     );
   }
