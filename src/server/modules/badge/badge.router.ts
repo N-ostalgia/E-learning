@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { router, protectedProcedure } from "@/server/trpc/trpc";
+import { router, protectedProcedure, publicProcedure } from "@/server/trpc/trpc";
 import { getAllBadges, getUserBadges } from "./badge.service";
 
 export const badgeRouter = router({
@@ -11,4 +11,8 @@ export const badgeRouter = router({
     const userId = ctx.session.user.id;
     return getUserBadges(userId);
   }),
+
+  getByUser: publicProcedure
+    .input(z.object({ userId: z.string().min(1) }))
+    .query(async ({ input }) => getUserBadges(input.userId)),
 });

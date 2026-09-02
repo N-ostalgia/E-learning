@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { notifications, users } from "@/lib/db/schema";
 import { and, eq, desc, lt, inArray, sql } from "drizzle-orm";
 import { randomUUID } from "crypto";
+import { TRPCError } from "@trpc/server";
 import { publishNotification } from "@/lib/websocket";
 import type {
   Notification,
@@ -96,7 +97,11 @@ export async function listNotifications(
   }
 
   if (cursor) {
-    conditions.push(lt(notifications.createdAt, new Date(Number(cursor))));
+    const cursorTime = new Date(Number(cursor));
+    if (Number.isNaN(cursorTime.getTime())) {
+      throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid notification cursor." });
+    }
+    conditions.push(lt(notifications.createdAt, cursorTime));
   }
 
   const rows = await db

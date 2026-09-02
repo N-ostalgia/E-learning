@@ -276,10 +276,16 @@ export async function listPosts(
   }
 
   if (cursor) {
-    const cursorData = JSON.parse(cursor) as {
-      isPinned: boolean;
-      createdAt: number;
-    };
+    let cursorData: { isPinned: boolean; createdAt: number };
+    try {
+      const parsed = JSON.parse(cursor) as Partial<typeof cursorData>;
+      if (typeof parsed.isPinned !== "boolean" || typeof parsed.createdAt !== "number" || !Number.isFinite(parsed.createdAt)) {
+        throw new Error("Invalid cursor");
+      }
+      cursorData = parsed as typeof cursorData;
+    } catch {
+      throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid feed cursor" });
+    }
     if (cursorData.isPinned) {
       conditions.push(
         sql`(posts.is_pinned = 1 AND posts.created_at < ${new Date(cursorData.createdAt)})
@@ -303,6 +309,7 @@ export async function listPosts(
       communitySlug: communities.slug,
       communityName: communities.name,
       communityOwnerId: communities.ownerId,
+      communityIsPublic: communities.isPublic,
       communityAvatarUrl: communities.avatarUrl,
       commentCount: sql<number>`
         (SELECT COUNT(*) FROM comments WHERE comments.post_id = posts.id)
@@ -391,6 +398,7 @@ export async function getPost(
       communitySlug: communities.slug,
       communityName: communities.name,
       communityOwnerId: communities.ownerId,
+      communityIsPublic: communities.isPublic,
       commentCount: sql<number>`
         (SELECT COUNT(*) FROM comments WHERE comments.post_id = posts.id)
       `,
@@ -422,6 +430,28 @@ export async function getPost(
 
   if (!row) {
     throw new TRPCError({ code: "NOT_FOUND", message: "Post not found." });
+  }
+
+  if (!row.communityIsPublic) {
+    if (!currentUserId) {
+      throw new TRPCError({ code: "FORBIDDEN", message: "Community membership required" });
+    }
+
+    const membership = await db
+      .select({ id: communityMembers.id })
+      .from(communityMembers)
+      .where(
+        and(
+          eq(communityMembers.communityId, row.communityId),
+          eq(communityMembers.userId, currentUserId),
+          eq(communityMembers.status, "active")
+        )
+      )
+      .limit(1);
+
+    if (membership.length === 0) {
+      throw new TRPCError({ code: "FORBIDDEN", message: "Community membership required" });
+    }
   }
 
   return {
@@ -1018,6 +1048,12 @@ export async function createComment(
       throw new TRPCError({
         code: "NOT_FOUND",
         message: "Parent comment not found.",
+      });
+    }
+    if (parentComment.postId !== data.postId) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "Parent comment does not belong to this post.",
       });
     }
   }

@@ -53,7 +53,7 @@ export function NotificationDropdown({
   const utils = trpc.useUtils();
   const ref = useRef<HTMLDivElement>(null);
 
-  const { data, isLoading } = trpc.notification.list.useQuery({
+  const { data, isLoading, isError } = trpc.notification.list.useQuery({
     limit: 10,
     filter: "all",
   });
@@ -72,6 +72,7 @@ export function NotificationDropdown({
       await utils.notification.list.invalidate();
       await utils.notification.getUnreadCount.invalidate();
     },
+    onError: (err) => toast.error(err.message || "Failed to mark notification as read."),
   });
 
   useEffect(() => {
@@ -137,7 +138,13 @@ export function NotificationDropdown({
           </div>
         )}
 
-        {!isLoading && items.length === 0 && (
+        {isError && (
+          <p className="p-6 text-center text-sm text-red-600">
+            Failed to load notifications. Please try again.
+          </p>
+        )}
+
+        {!isLoading && !isError && items.length === 0 && (
           <div className="flex flex-col items-center gap-2 p-8 text-center">
             <FontAwesomeIcon
               icon={faBell}
@@ -149,7 +156,7 @@ export function NotificationDropdown({
           </div>
         )}
 
-        {!isLoading &&
+        {!isLoading && !isError &&
           items.map((notification) => (
             <button
               key={notification.id}

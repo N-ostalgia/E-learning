@@ -101,12 +101,14 @@ export default function NotificationsPage() {
       await utils.notification.list.invalidate();
       await utils.notification.getUnreadCount.invalidate();
     },
+    onError: (err) => toast.error(err.message || "Failed to mark notification as read."),
   });
 
   const deleteMutation = trpc.notification.delete.useMutation({
     onSuccess: async () => {
       await utils.notification.list.invalidate();
       await utils.notification.getUnreadCount.invalidate();
+      toast.success("Notification deleted.");
     },
     onError: (err) => toast.error(err.message || "Failed to delete notification."),
   });
@@ -195,6 +197,21 @@ export default function NotificationsPage() {
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-20 animate-pulse rounded-xl bg-[var(--color-border)]" />
           ))}
+        </div>
+      ) : listQuery.isError ? (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-8 text-center">
+          <h3 className="font-display text-lg font-semibold text-red-700">
+            Failed to load notifications
+          </h3>
+          <p className="mt-1 text-sm text-red-600">
+            Please try again in a moment.
+          </p>
+          <button
+            onClick={() => listQuery.refetch()}
+            className="mt-4 rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white"
+          >
+            Try again
+          </button>
         </div>
       ) : notifications.length === 0 ? (
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-10 text-center">

@@ -43,12 +43,18 @@ const iconMap: Record<string, any> = {
 };
 
 export function ProfileBadges({ userId, isOwnProfile }: ProfileBadgesProps) {
-  const { data: badges, isLoading } = trpc.badge.myBadges.useQuery(undefined, {
+  const { data: badges, isLoading } = trpc.badge.getByUser.useQuery({ userId }, {
     enabled: !!userId,
   });
 
   if (isLoading) {
-    return <div className="text-sm text-[var(--color-text-secondary)]">Loading badges...</div>;
+    return (
+      <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          <div key={i} className="h-28 animate-pulse rounded-lg bg-[var(--color-border)]" />
+        ))}
+      </div>
+    );
   }
 
   if (!badges || badges.length === 0) {

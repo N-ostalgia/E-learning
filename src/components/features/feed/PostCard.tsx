@@ -185,6 +185,7 @@ export function PostCard({
     onSuccess: () => {
       utils.feed.getComments.invalidate({ postId: post.id });
       utils.feed.list.invalidate();
+      toast.success("Comment added!");
     },
     onError: (err) => {
       toast.error(err.message || "Failed to add comment.");

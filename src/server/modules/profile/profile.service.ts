@@ -118,7 +118,10 @@ async function queryProfileByField(
 export async function getProfileByUsername(
   username: string
 ): Promise<UserProfile | null> {
-  return queryProfileByField("username", username);
+  const profile = await queryProfileByField("username", username);
+  if (!profile) return null;
+  const { email: _email, ...publicProfile } = profile;
+  return publicProfile;
 }
 
 export async function getProfileById(
@@ -201,6 +204,9 @@ export async function getUserActivity(
   ];
 
   if (cursorTime) {
+    if (Number.isNaN(cursorTime.getTime())) {
+      throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid activity cursor." });
+    }
     postConditions.push(lt(posts.createdAt, cursorTime));
     commentConditions.push(lt(comments.createdAt, cursorTime));
   }
@@ -215,7 +221,7 @@ export async function getUserActivity(
     })
     .from(posts)
     .innerJoin(communities, eq(communities.id, posts.communityId))
-    .where(and(...postConditions))
+    .where(and(...postConditions, eq(communities.isPublic, true)))
     .orderBy(desc(posts.createdAt))
     .limit(limit + 1);
 
@@ -230,7 +236,7 @@ export async function getUserActivity(
     .from(comments)
     .innerJoin(posts, eq(posts.id, comments.postId))
     .innerJoin(communities, eq(communities.id, posts.communityId))
-    .where(and(...commentConditions))
+    .where(and(...commentConditions, eq(communities.isPublic, true)))
     .orderBy(desc(comments.createdAt))
     .limit(limit + 1);
 
@@ -288,7 +294,8 @@ export async function getUserCommunities(
     .where(
       and(
         eq(communityMembers.userId, userId),
-        eq(communityMembers.status, "active")
+        eq(communityMembers.status, "active"),
+        eq(communities.isPublic, true)
       )
     )
     .orderBy(desc(communityMembers.joinedAt));
