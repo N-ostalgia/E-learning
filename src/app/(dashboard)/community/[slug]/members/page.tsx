@@ -406,11 +406,10 @@ export default function CommunityMembersPage() {
 
   if (isLoading && !data) {
     return (
-      <div className="flex min-h-[400px] items-center justify-center">
-        <FontAwesomeIcon
-          icon={faSpinner}
-          className="h-8 w-8 animate-spin text-[var(--color-text-secondary)]"
-        />
+      <div className="space-y-4">
+        <div className="h-8 w-48 animate-pulse rounded bg-[var(--color-border)]" />
+        <div className="h-24 animate-pulse rounded-xl bg-[var(--color-border)]" />
+        <div className="h-96 animate-pulse rounded-xl bg-[var(--color-border)]" />
       </div>
     );
   }

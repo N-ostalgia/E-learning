@@ -33,7 +33,7 @@ const MEDALS = [
 export function Leaderboard({ communitySlug }: LeaderboardProps) {
   const [timeRange, setTimeRange] = useState<TimeRange>("all");
 
-  const { data, isLoading } = trpc.leaderboard.getLeaderboard.useQuery({
+  const { data, isLoading, isError } = trpc.leaderboard.getLeaderboard.useQuery({
     communitySlug,
     timeRange,
     limit: 10,
@@ -58,16 +58,19 @@ export function Leaderboard({ communitySlug }: LeaderboardProps) {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-[300px] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[var(--color-accent)] border-t-transparent" />
+      <div className="space-y-3">
+        <div className="h-10 animate-pulse rounded bg-[var(--color-border)]" />
+        {[1, 2, 3, 4, 5].map((i) => (
+          <div key={i} className="h-20 animate-pulse rounded-xl bg-[var(--color-border)]" />
+        ))}
       </div>
     );
   }
 
-  if (!data) {
+  if (isError || !data) {
     return (
-      <div className="flex min-h-[300px] items-center justify-center text-[var(--color-text-secondary)]">
-        No data available
+      <div className="rounded-xl border border-red-200 bg-red-50 p-8 text-center">
+        <p className="text-sm text-red-600">Failed to load the leaderboard. Please try again.</p>
       </div>
     );
   }

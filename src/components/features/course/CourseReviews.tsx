@@ -242,7 +242,11 @@ export function CourseReviews({ courseId, isEnrolled }: CourseReviewsProps) {
             disabled={createMutation.isPending}
             className="mt-3 rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--color-accent-hover)] disabled:opacity-60"
           >
-            {createMutation.isPending ? "Submitting..." : "Submit Review"}
+            {createMutation.isPending ? (
+              <span className="mx-auto block h-4 w-24 animate-pulse rounded bg-white/50" aria-label="Submitting review" />
+            ) : (
+              "Submit Review"
+            )}
           </button>
         </form>
       )}
@@ -295,7 +299,11 @@ export function CourseReviews({ courseId, isEnrolled }: CourseReviewsProps) {
               disabled={updateMutation.isPending}
               className="rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--color-accent-hover)] disabled:opacity-60"
             >
-              {updateMutation.isPending ? "Saving..." : "Update"}
+              {updateMutation.isPending ? (
+                <span className="mx-auto block h-4 w-16 animate-pulse rounded bg-white/50" aria-label="Saving review" />
+              ) : (
+                "Update"
+              )}
             </button>
             <button
               type="button"

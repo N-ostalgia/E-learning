@@ -5,7 +5,6 @@ import { useState, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faWandMagicSparkles,
-  faSpinner,
   faCheckCircle,
   faExclamationTriangle,
   faTrash,
@@ -176,7 +175,7 @@ export function QuizGenerator({
 
       {jobId && (job?.status === "pending" || job?.status === "processing") && (
         <div className="mt-4 flex items-center gap-2 text-sm">
-          <FontAwesomeIcon icon={faSpinner} className="h-4 w-4 animate-spin text-[var(--color-accent)]" />
+          <span className="h-4 w-28 animate-pulse rounded bg-[var(--color-border)]" aria-label="Generating quiz" />
           <span className="text-[var(--color-text-secondary)]">
             AI is watching the video and drafting questions — this can take
             a couple of minutes for longer videos.

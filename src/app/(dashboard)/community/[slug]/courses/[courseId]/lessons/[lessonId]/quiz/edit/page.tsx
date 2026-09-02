@@ -26,7 +26,7 @@ export default function EditQuizPage() {
   }>();
   const utils = trpc.useUtils();
 
-  const { data: quizData, isLoading } = trpc.quiz.getByLesson.useQuery({ lessonId });
+  const { data: quizData, isLoading } = trpc.quiz.getForOwner.useQuery({ lessonId });
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [passingScore, setPassingScore] = useState(80);

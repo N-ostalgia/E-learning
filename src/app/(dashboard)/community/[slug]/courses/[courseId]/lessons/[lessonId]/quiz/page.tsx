@@ -30,7 +30,7 @@ export default function QuizPage() {
   }>();
   const utils = trpc.useUtils();
 
-  const { data: quizData, isLoading } = trpc.quiz.getByLesson.useQuery(
+  const { data: quizData, isLoading } = trpc.quiz.getForOwner.useQuery(
     { lessonId },
     { enabled: !!lessonId }
   );

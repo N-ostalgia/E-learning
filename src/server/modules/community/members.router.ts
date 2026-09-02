@@ -11,9 +11,9 @@ export const membersRouter = router({
   getCommunityMembers: protectedProcedure
     .input(
       z.object({
-        communitySlug: z.string(),
-        limit: z.number().min(1).max(200).default(100),
-        search: z.string().optional(),
+        communitySlug: z.string().trim().min(1).max(100),
+        limit: z.number().int().min(1).max(200).default(100),
+        search: z.string().trim().max(100).optional(),
       })
     )
     .query(async ({ input, ctx }) => {
@@ -51,8 +51,9 @@ export const membersRouter = router({
 
       // Add search filter if provided
       if (search && search.length > 0) {
+        const escapedSearch = search.replace(/[%_]/g, "\\$&");
         conditions.push(
-          sql`(${users.username} LIKE ${`%${search}%`} OR ${users.name} LIKE ${`%${search}%`})`
+          sql`(${users.username} LIKE ${`%${escapedSearch}%`} ESCAPE '\\' OR ${users.name} LIKE ${`%${escapedSearch}%`} ESCAPE '\\')`
         );
       }
 
@@ -164,6 +165,9 @@ export const membersRouter = router({
         ),
       });
       if (!targetMember) throw new TRPCError({ code: "NOT_FOUND", message: "Member not found" });
+      if (targetMember.status !== "active") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Only active members can be managed" });
+      }
       if (targetMember.role === "owner") {
         throw new TRPCError({ code: "FORBIDDEN", message: "Cannot change the owner's role" });
       }
@@ -209,6 +213,9 @@ export const membersRouter = router({
         ),
       });
       if (!targetMember) throw new TRPCError({ code: "NOT_FOUND", message: "Member not found" });
+      if (targetMember.status !== "active") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Only active members can be managed" });
+      }
       if (targetMember.role === "owner") {
         throw new TRPCError({ code: "FORBIDDEN", message: "Cannot demote the owner" });
       }
@@ -254,6 +261,9 @@ export const membersRouter = router({
         ),
       });
       if (!targetMember) throw new TRPCError({ code: "NOT_FOUND", message: "Member not found" });
+      if (targetMember.status !== "active") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Only active members can be managed" });
+      }
       if (targetMember.role === "owner") {
         throw new TRPCError({ code: "FORBIDDEN", message: "Cannot remove the community owner" });
       }

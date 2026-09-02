@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { router, protectedProcedure, publicProcedure } from "../../trpc/trpc";
+import { router, publicProcedure } from "../../trpc/trpc";
 import { db } from "../../../lib/db";
 import { communities } from "../../../lib/db/schema";
 import { eq } from "drizzle-orm";
@@ -12,9 +12,9 @@ export const leaderboardRouter = router({
   getLeaderboard: publicProcedure
     .input(
       z.object({
-        communitySlug: z.string(),
+        communitySlug: z.string().trim().min(1).max(100),
         timeRange: z.enum(["all", "week", "month"]).default("all"),
-        limit: z.number().min(1).max(50).default(10),
+        limit: z.number().int().min(1).max(50).default(10),
       })
     )
     .query(async ({ input, ctx }) => {

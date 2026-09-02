@@ -6,7 +6,6 @@ import {
   faCheckCircle,
   faTimesCircle,
   faClock,
-  faSpinner,
   faExclamationTriangle,
 } from "@fortawesome/free-solid-svg-icons";
 import { trpc } from "@/lib/trpc/react";
@@ -20,6 +19,7 @@ interface QuizProps {
 interface GradedAnswer {
   selected: string;
   correct: boolean;
+  correctAnswer: string;
 }
 
 export function Quiz({ lessonId, onComplete }: QuizProps) {
@@ -281,7 +281,7 @@ export function Quiz({ lessonId, onComplete }: QuizProps) {
                         Your answer: {userAnswer}
                       </p>
                       {!isCorrect && (
-                        <p className="text-emerald-500">Correct answer: {q.correctAnswer}</p>
+                        <p className="text-emerald-500">Correct answer: {answer?.correctAnswer}</p>
                       )}
                       {q.explanation && (
                         <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
@@ -302,7 +302,9 @@ export function Quiz({ lessonId, onComplete }: QuizProps) {
             disabled={startAttemptMutation.isPending}
             className="mt-4 rounded-lg bg-[var(--color-accent)] px-6 py-2 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-60"
           >
-            {startAttemptMutation.isPending ? "Starting..." : `Retry Quiz (${remainingAttempts} attempts left)`}
+            {startAttemptMutation.isPending ? (
+              <span className="mx-auto block h-4 w-24 animate-pulse rounded bg-white/50" aria-label="Starting quiz" />
+            ) : `Retry Quiz (${remainingAttempts} attempts left)`}
           </button>
         )}
         {!passed && remainingAttempts === 0 && (
@@ -351,7 +353,11 @@ export function Quiz({ lessonId, onComplete }: QuizProps) {
             disabled={startAttemptMutation.isPending}
             className="mt-6 rounded-lg bg-[var(--color-accent)] px-6 py-2 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-60"
           >
-            {startAttemptMutation.isPending ? "Starting..." : "Start Quiz"}
+            {startAttemptMutation.isPending ? (
+              <span className="mx-auto block h-4 w-20 animate-pulse rounded bg-white/50" aria-label="Starting quiz" />
+            ) : (
+              "Start Quiz"
+            )}
           </button>
         ) : (
           <div className="mt-6 rounded-lg bg-red-500/10 p-4 text-sm text-red-400">
@@ -465,10 +471,7 @@ export function Quiz({ lessonId, onComplete }: QuizProps) {
               className="ml-auto rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
             >
               {isSubmitting ? (
-                <>
-                  <FontAwesomeIcon icon={faSpinner} className="mr-2 h-4 w-4 animate-spin" />
-                  Submitting...
-                </>
+                <span className="mx-auto block h-4 w-20 animate-pulse rounded bg-white/50" aria-label="Submitting quiz" />
               ) : timeExpired ? (
                 "Time Expired"
               ) : hasPassed ? (

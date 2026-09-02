@@ -43,6 +43,6 @@ export const reviewRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const { reviewId, ...data } = input;
-      return updateReview(reviewId, data);
+      return updateReview(ctx.session.user.id, reviewId, data);
     }),
 });

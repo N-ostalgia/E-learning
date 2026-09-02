@@ -8,6 +8,7 @@ import { quizQuestions } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import {
   getQuizByLessonId,
+  getQuizForOwner,
   getQuizWithQuestions,
   createQuiz,
   createQuizQuestions,
@@ -18,6 +19,8 @@ import {
   getQuizAttempts,
   getLatestQuizAttempt,
   getQuizAttemptsCount,
+  deleteQuizQuestions,
+  verifyQuizOwner,
 } from "./quiz.service";
 
 export const quizRouter = router({
@@ -31,6 +34,10 @@ export const quizRouter = router({
       return quiz;
     }),
 
+  getForOwner: protectedProcedure
+    .input(z.object({ lessonId: z.string().min(1) }))
+    .query(async ({ ctx, input }) => getQuizForOwner(input.lessonId, ctx.session.user.id)),
+
   getWithQuestions: protectedProcedure
     .input(z.object({ quizId: z.string().min(1) }))
     .query(async ({ ctx, input }) => {
@@ -38,6 +45,7 @@ export const quizRouter = router({
       if (!quiz) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Quiz not found" });
       }
+      await verifyQuizOwner(input.quizId, ctx.session.user.id);
       return quiz;
     }),
 
@@ -62,13 +70,14 @@ export const quizRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const quiz = await createQuiz({
+        userId: ctx.session.user.id,
         lessonId: input.lessonId,
         title: input.title,
         description: input.description,
         passingScore: input.passingScore,
         timeLimit: input.timeLimit,
       });
-      await createQuizQuestions(quiz.id, input.questions);
+      await createQuizQuestions(quiz.id, ctx.session.user.id, input.questions);
       return quiz;
     }),
 
@@ -84,13 +93,13 @@ export const quizRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const { quizId, ...data } = input;
-      return updateQuiz(quizId, data);
+      return updateQuiz(quizId, ctx.session.user.id, data);
     }),
 
   delete: protectedProcedure
     .input(z.object({ quizId: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
-      return deleteQuiz(input.quizId);
+      return deleteQuiz(input.quizId, ctx.session.user.id);
     }),
 
   startAttempt: protectedProcedure
@@ -107,7 +116,7 @@ export const quizRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      return submitQuizAttempt(input.attemptId, input.answers);
+      return submitQuizAttempt(ctx.session.user.id, input.attemptId, input.answers);
     }),
 
   attempts: protectedProcedure
@@ -130,8 +139,7 @@ export const quizRouter = router({
     deleteQuestions: protectedProcedure
   .input(z.object({ quizId: z.string().min(1) }))
   .mutation(async ({ ctx, input }) => {
-    await db.delete(quizQuestions).where(eq(quizQuestions.quizId, input.quizId));
-    return { success: true };
+    return deleteQuizQuestions(input.quizId, ctx.session.user.id);
   }),
   createQuestions: protectedProcedure
   .input(
@@ -149,7 +157,7 @@ export const quizRouter = router({
     })
   )
   .mutation(async ({ ctx, input }) => {
-    return createQuizQuestions(input.quizId, input.questions);
+    return createQuizQuestions(input.quizId, ctx.session.user.id, input.questions);
   }),
   // Timer check endpoint
   checkTime: protectedProcedure

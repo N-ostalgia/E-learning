@@ -173,7 +173,7 @@ export async function getCommunityLeaderboard(
       )
     )
     .groupBy(pointsActivity.userId, users.id, users.username, users.name, users.image, users.level)
-    .orderBy(sql`SUM(${pointsActivity.points}) DESC`)
+    .orderBy(sql`SUM(${pointsActivity.points}) DESC`, users.id)
     .limit(limit);
 
   const rows = await query;

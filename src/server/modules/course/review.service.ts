@@ -1,6 +1,6 @@
 // src/server/modules/course/review.service.ts
 import { db } from "@/lib/db";
-import { courseReviews, courses, users } from "@/lib/db/schema";
+import { courseReviews, courses, users, courseEnrollments } from "@/lib/db/schema";
 import { and, eq, desc, avg, sql } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { randomUUID } from "crypto";
@@ -69,6 +69,18 @@ export async function createReview(data: {
   rating: number;
   review?: string;
 }) {
+  const course = await db.select({ id: courses.id }).from(courses).where(eq(courses.id, data.courseId)).limit(1).then((r) => r[0]);
+  if (!course) throw new TRPCError({ code: "NOT_FOUND", message: "Course not found" });
+
+  const enrollment = await db
+    .select({ id: courseEnrollments.id })
+    .from(courseEnrollments)
+    .where(and(eq(courseEnrollments.userId, data.userId), eq(courseEnrollments.courseId, data.courseId)))
+    .limit(1);
+  if (enrollment.length === 0) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "You must be enrolled to review this course" });
+  }
+
   const existing = await getUserReview(data.userId, data.courseId);
   if (existing) {
     throw new TRPCError({
@@ -94,7 +106,11 @@ export async function createReview(data: {
   return review;
 }
 
-export async function updateReview(reviewId: string, data: { rating?: number; review?: string }) {
+export async function updateReview(userId: string, reviewId: string, data: { rating?: number; review?: string }) {
+  const existing = await db.select({ userId: courseReviews.userId }).from(courseReviews).where(eq(courseReviews.id, reviewId)).limit(1).then((r) => r[0]);
+  if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Review not found" });
+  if (existing.userId !== userId) throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own review" });
+
   const [updated] = await db
     .update(courseReviews)
     .set({ ...data, updatedAt: new Date() })
