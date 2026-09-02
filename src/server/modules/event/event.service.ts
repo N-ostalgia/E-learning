@@ -162,6 +162,9 @@ export async function createEvent(
       message: "Only community owners and admins can create events",
     });
   }
+  if (data.endDate && data.endDate < data.startDate) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: "Event end must be after its start" });
+  }
 
   const now = new Date();
   const [event] = await db
@@ -214,6 +217,9 @@ export async function updateEvent(
       code: "FORBIDDEN",
       message: "Only community owners and admins can edit events",
     });
+  }
+  if (data.startDate && data.endDate && data.endDate < data.startDate) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: "Event end must be after its start" });
   }
 
   const updateData: any = {

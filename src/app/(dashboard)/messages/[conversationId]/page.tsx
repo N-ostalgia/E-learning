@@ -57,6 +57,8 @@ export default function ConversationPage() {
 
   const {
     data: messagesData,
+    isLoading: messagesLoading,
+    isError: messagesError,
     refetch,
     fetchNextPage,
     hasNextPage,
@@ -187,8 +189,9 @@ export default function ConversationPage() {
 
   if (!conversation || !otherUser) {
     return (
-      <div className="flex min-h-[400px] items-center justify-center">
-        <FontAwesomeIcon icon={faSpinner} className="h-8 w-8 animate-spin text-[var(--color-text-secondary)]" />
+      <div className="mx-auto w-full max-w-4xl space-y-4 px-4 py-4">
+        <div className="h-12 animate-pulse rounded bg-[var(--color-border)]" />
+        <div className="h-96 animate-pulse rounded-xl bg-[var(--color-border)]" />
       </div>
     );
   }
@@ -243,14 +246,23 @@ export default function ConversationPage() {
             disabled={isFetchingNextPage}
             className="mx-auto mb-2 flex items-center gap-1.5 text-sm text-[var(--color-accent)] hover:underline disabled:opacity-50"
           >
-            {isFetchingNextPage && (
-              <FontAwesomeIcon icon={faSpinner} className="h-3 w-3 animate-spin" />
-            )}
-            {isFetchingNextPage ? "Loading..." : "Load more"}
+            {isFetchingNextPage ? (
+              <span className="h-4 w-20 animate-pulse rounded bg-[var(--color-border)]" aria-label="Loading more messages" />
+            ) : "Load more"}
           </button>
         )}
 
-        {messages.length === 0 && !hasNextPage && !isBlocked && (
+        {messagesLoading && (
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-12 animate-pulse rounded-xl bg-[var(--color-border)]" />
+            ))}
+          </div>
+        )}
+        {messagesError && (
+          <p className="py-8 text-center text-sm text-red-600">Failed to load messages.</p>
+        )}
+        {!messagesLoading && !messagesError && messages.length === 0 && !hasNextPage && !isBlocked && (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <div className="mb-3 rounded-full bg-[var(--color-accent-soft)] p-3">
               <FontAwesomeIcon icon={faMessage} className="h-6 w-6 text-[var(--color-accent)]" />
@@ -349,7 +361,7 @@ export default function ConversationPage() {
             aria-label="Send message"
           >
             {isSending ? (
-              <FontAwesomeIcon icon={faSpinner} className="h-4 w-4 animate-spin" />
+              <span className="h-4 w-4 animate-pulse rounded-full bg-white/60" aria-label="Sending message" />
             ) : (
               <FontAwesomeIcon icon={faPaperPlane} className="h-4 w-4" />
             )}

@@ -11,7 +11,7 @@ import {
   courseEnrollments,
   communities,
 } from "@/lib/db/schema";
-import { and, eq, sql, count, desc } from "drizzle-orm";
+import { and, eq, sql, count, desc, asc } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { BADGE_DEFINITIONS } from "@/lib/badges/definitions";
 import { createNotification } from "@/server/modules/notification/notification.service";
@@ -74,7 +74,7 @@ async function ensureBadgesExist(): Promise<void> {
  */
 export async function getAllBadges(): Promise<Badge[]> {
   await ensureBadgesExist();
-  return db.select().from(badges).orderBy(badges.requirementValue);
+  return db.select().from(badges).orderBy(asc(badges.requirementValue), asc(badges.id));
 }
 
 /**
@@ -225,13 +225,14 @@ export async function checkAndAwardBadges(userId: string): Promise<Badge[]> {
     if (qualified) {
       // Award badge
       const now = new Date();
-      await db.insert(userBadges).values({
+      const [earnedBadge] = await db.insert(userBadges).values({
         id: randomUUID(),
         userId,
         badgeId: badge.id,
         earnedAt: now,
         createdAt: now,
-      });
+      }).onConflictDoNothing({ target: [userBadges.userId, userBadges.badgeId] }).returning({ id: userBadges.id });
+      if (!earnedBadge) continue;
       newlyEarned.push(badge);
 
       // Create notification for the badge (actorId is optional, so we omit it)

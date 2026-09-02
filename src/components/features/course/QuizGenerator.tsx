@@ -60,7 +60,7 @@ export function QuizGenerator({
 
   // Real tRPC polling instead of a hand-rolled raw fetch against the HTTP
   // endpoint — type-safe, and stops automatically once the job settles.
-  const { data: job } = trpc.ai.getJobStatus.useQuery(
+  const { data: job, isError: jobError } = trpc.ai.getJobStatus.useQuery(
     { jobId: jobId! },
     {
       enabled: !!jobId,
@@ -180,6 +180,12 @@ export function QuizGenerator({
             AI is watching the video and drafting questions — this can take
             a couple of minutes for longer videos.
           </span>
+        </div>
+      )}
+
+      {jobId && jobError && (
+        <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">
+          Failed to load generation status. Please try again.
         </div>
       )}
 

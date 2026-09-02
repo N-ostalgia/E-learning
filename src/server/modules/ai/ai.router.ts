@@ -10,23 +10,26 @@ import {
 } from "./ai.service";
 
 const questionInput = z.object({
-  question: z.string().min(1),
-  options: z.array(z.string().min(1)).min(2).max(4),
-  correctAnswerIndex: z.number().int().min(0),
-  explanation: z.string().min(1),
+  question: z.string().trim().min(1).max(2000),
+  options: z.array(z.string().trim().min(1).max(500)).min(2).max(4),
+  correctAnswerIndex: z.number().int().min(0).max(3),
+  explanation: z.string().trim().min(1).max(2000),
   sourceStartSeconds: z.number().int().min(0).optional(),
   sourceEndSeconds: z.number().int().min(0).optional(),
+}).refine((question) => question.correctAnswerIndex < question.options.length, {
+  message: "Correct answer must reference an available option",
+  path: ["correctAnswerIndex"],
 });
 
 export const aiRouter = router({
   generateQuiz: protectedProcedure
-    .input(z.object({ lessonId: z.string() }))
+    .input(z.object({ lessonId: z.string().trim().min(1).max(100) }))
     .mutation(async ({ ctx, input }) => {
       return startQuizGeneration(ctx.session.user.id, input.lessonId);
     }),
 
   getJobStatus: protectedProcedure
-    .input(z.object({ jobId: z.string() }))
+    .input(z.object({ jobId: z.string().trim().min(1).max(100) }))
     .query(async ({ ctx, input }) => {
       return getQuizGenerationJob(ctx.session.user.id, input.jobId);
     }),
@@ -34,8 +37,8 @@ export const aiRouter = router({
   saveGeneratedQuiz: protectedProcedure
     .input(
       z.object({
-        jobId: z.string(),
-        title: z.string().min(1),
+        jobId: z.string().trim().min(1).max(100),
+        title: z.string().trim().min(1).max(200),
         questions: z.array(questionInput).min(1),
       })
     )
@@ -47,7 +50,7 @@ export const aiRouter = router({
     }),
 
   discardJob: protectedProcedure
-    .input(z.object({ jobId: z.string() }))
+    .input(z.object({ jobId: z.string().trim().min(1).max(100) }))
     .mutation(async ({ ctx, input }) => {
       return discardQuizGenerationJob(ctx.session.user.id, input.jobId);
     }),

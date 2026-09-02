@@ -13,6 +13,6 @@ export const badgeRouter = router({
   }),
 
   getByUser: publicProcedure
-    .input(z.object({ userId: z.string().min(1) }))
+    .input(z.object({ userId: z.string().trim().min(1).max(100) }))
     .query(async ({ input }) => getUserBadges(input.userId)),
 });

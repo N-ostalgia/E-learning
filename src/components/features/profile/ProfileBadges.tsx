@@ -43,7 +43,7 @@ const iconMap: Record<string, any> = {
 };
 
 export function ProfileBadges({ userId, isOwnProfile }: ProfileBadgesProps) {
-  const { data: badges, isLoading } = trpc.badge.getByUser.useQuery({ userId }, {
+  const { data: badges, isLoading, isError, refetch } = trpc.badge.getByUser.useQuery({ userId }, {
     enabled: !!userId,
   });
 
@@ -53,6 +53,17 @@ export function ProfileBadges({ userId, isOwnProfile }: ProfileBadgesProps) {
         {[1, 2, 3, 4, 5, 6].map((i) => (
           <div key={i} className="h-28 animate-pulse rounded-lg bg-[var(--color-border)]" />
         ))}
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-center">
+        <p className="text-sm text-red-600">Failed to load badges.</p>
+        <button onClick={() => refetch()} className="mt-2 text-sm font-medium text-[var(--color-accent)] hover:underline">
+          Try again
+        </button>
       </div>
     );
   }

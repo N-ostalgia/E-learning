@@ -17,9 +17,9 @@ export const messageRouter = router({
   getMessages: protectedProcedure
     .input(
       z.object({
-        conversationId: z.string(),
-        limit: z.number().min(1).max(100).default(50),
-        cursor: z.string().optional(),
+        conversationId: z.string().trim().min(1).max(100),
+        limit: z.number().int().min(1).max(100).default(50),
+        cursor: z.string().trim().optional(),
       })
     )
     .query(async ({ ctx, input }) => {
@@ -35,7 +35,7 @@ export const messageRouter = router({
     .input(
       z.object({
         conversationId: z.string(),
-        content: z.string().min(1).max(5000),
+        content: z.string().trim().min(1).max(5000),
       })
     )
     .mutation(async ({ ctx, input }) => {

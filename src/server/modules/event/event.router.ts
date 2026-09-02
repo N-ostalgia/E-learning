@@ -11,7 +11,7 @@ export const eventRouter = router({
   list: protectedProcedure
     .input(
       z.object({
-        communityId: z.string(),
+        communityId: z.string().trim().min(1),
         startDate: z.date().optional(),
         endDate: z.date().optional(),
       })
@@ -28,14 +28,14 @@ export const eventRouter = router({
   create: protectedProcedure
     .input(
       z.object({
-        communityId: z.string(),
+        communityId: z.string().trim().min(1),
         title: z.string().min(1).max(100),
         description: z.string().max(500).optional(),
         startDate: z.date(),
         endDate: z.date().optional(),
         isFullDay: z.boolean().optional().default(false),
         location: z.string().max(200).optional(),
-        color: z.string().optional(),
+        color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -52,7 +52,7 @@ export const eventRouter = router({
         endDate: z.date().nullable().optional(),
         isFullDay: z.boolean().optional(),
         location: z.string().max(200).nullable().optional(),
-        color: z.string().optional(),
+        color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {

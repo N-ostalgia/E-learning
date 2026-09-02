@@ -43,6 +43,14 @@ export async function blockUser(blockerId: string, blockedId: string) {
     throw new TRPCError({ code: "BAD_REQUEST", message: "You cannot block yourself" });
   }
 
+  const blockedUser = await db.query.users.findFirst({
+    where: eq(users.id, blockedId),
+    columns: { id: true },
+  });
+  if (!blockedUser) {
+    throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+  }
+
   // Check if already blocked
   const existing = await db
     .select()

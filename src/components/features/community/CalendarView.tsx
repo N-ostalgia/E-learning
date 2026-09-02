@@ -61,7 +61,7 @@ export function CalendarView({ communityId, canManage }: CalendarViewProps) {
   const startOfMonth = new Date(year, month, 1);
   const endOfMonth = new Date(year, month, daysInMonth, 23, 59, 59);
 
-  const { data: events, refetch } = trpc.event.list.useQuery({
+  const { data: events, isLoading, isError, refetch } = trpc.event.list.useQuery({
     communityId,
     startDate: startOfMonth,
     endDate: endOfMonth,
@@ -178,6 +178,10 @@ export function CalendarView({ communityId, canManage }: CalendarViewProps) {
       }
       if (!startDate) {
         toast.error("Start date is required");
+        return;
+      }
+      if (endDate && new Date(endDate) < new Date(startDate)) {
+        toast.error("Event end must be after its start");
         return;
       }
 
@@ -390,7 +394,24 @@ export function CalendarView({ communityId, canManage }: CalendarViewProps) {
         ))}
       </div>
 
+      {isLoading && (
+        <div className="grid grid-cols-7 gap-1">
+          {Array.from({ length: 42 }).map((_, index) => (
+            <div key={index} className="aspect-square animate-pulse rounded-lg bg-[var(--color-border)]" />
+          ))}
+        </div>
+      )}
+      {isError && (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
+          <p className="text-sm text-red-600">Failed to load events.</p>
+          <button onClick={() => refetch()} className="mt-3 text-sm font-medium text-[var(--color-accent)] hover:underline">
+            Try again
+          </button>
+        </div>
+      )}
+
       {/* Calendar Grid */}
+      {!isLoading && !isError && (
       <div className="grid grid-cols-7 gap-1">
         {calendarDays.map((item, idx) => {
           if (item.empty) {
@@ -440,6 +461,7 @@ export function CalendarView({ communityId, canManage }: CalendarViewProps) {
           );
         })}
       </div>
+      )}
 
       {/* Events list for selected date */}
       {selectedDate && (

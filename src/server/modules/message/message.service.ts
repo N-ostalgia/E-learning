@@ -227,7 +227,11 @@ export async function getMessages(
   // Always return messages even if blocked (they can see old conversations)
   const conditions = [eq(messages.conversationId, conversationId)];
   if (cursor) {
-    conditions.push(sql`${messages.createdAt} < ${new Date(Number(cursor))}`);
+    const cursorTime = new Date(Number(cursor));
+    if (Number.isNaN(cursorTime.getTime())) {
+      throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid message cursor" });
+    }
+    conditions.push(sql`${messages.createdAt} < ${cursorTime}`);
   }
 
   const rows = await db
@@ -283,6 +287,20 @@ export async function getMessages(
 }
 
 export async function markAllRead(userId: string, conversationId: string): Promise<void> {
+  const conversation = await db
+    .select({ userId1: conversations.userId1, userId2: conversations.userId2 })
+    .from(conversations)
+    .where(eq(conversations.id, conversationId))
+    .limit(1)
+    .then((rows) => rows[0]);
+
+  if (!conversation) {
+    throw new TRPCError({ code: "NOT_FOUND", message: "Conversation not found" });
+  }
+  if (conversation.userId1 !== userId && conversation.userId2 !== userId) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "Not part of this conversation" });
+  }
+
   await db
     .update(messages)
     .set({ isRead: true, readAt: new Date() })

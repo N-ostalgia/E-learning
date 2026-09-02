@@ -36,7 +36,7 @@ export default function MessagesPage() {
   const { socket, isConnected } = useWebSocket(userId);
   const [search, setSearch] = useState("");
 
-  const { data: conversations, refetch } = trpc.message.getConversations.useQuery(
+  const { data: conversations, isLoading, isError, refetch } = trpc.message.getConversations.useQuery(
     undefined,
     { enabled: !!userId }
   );
@@ -102,7 +102,18 @@ export default function MessagesPage() {
       )}
 
       <div className="mt-4 space-y-2">
-        {!conversations || conversations.length === 0 ? (
+        {isLoading ? (
+          [1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-20 animate-pulse rounded-xl bg-[var(--color-border)]" />
+          ))
+        ) : isError ? (
+          <div className="rounded-xl border border-red-200 bg-red-50 p-8 text-center">
+            <p className="text-sm text-red-600">Failed to load conversations.</p>
+            <button onClick={() => refetch()} className="mt-3 text-sm font-medium text-[var(--color-accent)] hover:underline">
+              Try again
+            </button>
+          </div>
+        ) : !conversations || conversations.length === 0 ? (
           <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-12 text-center">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[var(--color-accent-soft)]">
               <FontAwesomeIcon icon={faMessage} className="h-6 w-6 text-[var(--color-accent)]" />

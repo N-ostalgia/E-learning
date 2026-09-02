@@ -173,6 +173,13 @@ export async function saveGeneratedQuiz(
   }
   const { lesson } = await getLessonWithPermissionCheck(job.lessonId, userId);
 
+  if (job.status !== "completed" || !job.result) {
+    throw new TRPCError({
+      code: "PRECONDITION_FAILED",
+      message: "Quiz generation has not completed yet",
+    });
+  }
+
   if (input.questions.length === 0) {
     throw new TRPCError({
       code: "BAD_REQUEST",
@@ -184,6 +191,16 @@ export async function saveGeneratedQuiz(
       throw new TRPCError({
         code: "BAD_REQUEST",
         message: `"${q.question}" has an invalid correct answer selection.`,
+      });
+    }
+    if (
+      q.sourceEndSeconds !== undefined &&
+      q.sourceStartSeconds !== undefined &&
+      q.sourceEndSeconds < q.sourceStartSeconds
+    ) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: `"${q.question}" has an invalid timestamp range.`,
       });
     }
   }
