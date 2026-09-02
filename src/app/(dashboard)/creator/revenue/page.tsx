@@ -48,8 +48,14 @@ export default function RevenuePage() {
 
   if (revenueLoading || transactionsLoading) {
     return (
-      <div className="flex min-h-[400px] items-center justify-center text-[var(--color-text-secondary)]">
-        Loading...
+      <div className="space-y-6 p-4 sm:p-6 lg:p-8">
+        <div className="h-8 w-40 animate-pulse rounded bg-[var(--color-border)]" />
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="h-24 animate-pulse rounded-xl bg-[var(--color-border)]" />
+          ))}
+        </div>
+        <div className="h-64 animate-pulse rounded-xl bg-[var(--color-border)]" />
       </div>
     );
   }
@@ -189,7 +195,11 @@ export default function RevenuePage() {
                 disabled={isFetchingNextPage}
                 className="rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm font-medium text-[var(--color-text-primary)] transition-colors hover:bg-[var(--color-bg)] disabled:opacity-60"
               >
-                {isFetchingNextPage ? "Loading..." : "Load more"}
+                {isFetchingNextPage ? (
+                  <span className="mx-auto block h-4 w-20 animate-pulse rounded bg-[var(--color-border)]" aria-label="Loading more transactions" />
+                ) : (
+                  "Load more"
+                )}
               </button>
             </div>
           )}

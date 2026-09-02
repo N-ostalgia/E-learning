@@ -6,7 +6,7 @@ import { eq, inArray, desc, and, lt } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import type { PlatformPlan, PlatformSubscription } from "./payment.types";
 import { TRPCError } from "@trpc/server";
-import { grantPaidCourseEnrollment } from "@/server/modules/course/course.service";
+import { getEnrollment, grantPaidCourseEnrollment } from "@/server/modules/course/course.service";
 
 type DatabaseExecutor = typeof db;
 
@@ -29,6 +29,10 @@ export async function createCourseCheckout(userId: string, courseId: string) {
   if (!course) throw new TRPCError({ code: "NOT_FOUND", message: "Course not found" });
   if (!course.price || course.price <= 0) {
     throw new TRPCError({ code: "BAD_REQUEST", message: "Course is free" });
+  }
+
+  if (await getEnrollment(userId, courseId)) {
+    throw new TRPCError({ code: "CONFLICT", message: "You are already enrolled in this course" });
   }
 
   const member = await db
@@ -87,7 +91,13 @@ function getSubscriptionPeriod(subscription: Stripe.Subscription): { currentPeri
 // PLATFORM SUBSCRIPTION (Creator Pays Platform)
 
 export async function createPlatformCheckout(userId: string, plan: PlatformPlan = "pro") {
-  if (!PLATFORM_PRICE_ID) throw new Error("PLATFORM_PRICE_ID not configured");
+  if (plan !== "pro" && plan !== "enterprise") {
+    throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid platform plan" });
+  }
+  if (!PLATFORM_PRICE_ID) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Platform price is not configured" });
+  if (await checkPlatformAccess(userId)) {
+    throw new TRPCError({ code: "CONFLICT", message: "You already have an active Nexus Pro subscription" });
+  }
 
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
@@ -292,6 +302,36 @@ export async function createCommunityCheckout(
 
   if (!community.stripeProductId) {
     throw new TRPCError({ code: "BAD_REQUEST", message: "Community is missing its Stripe product" });
+  }
+
+  const membership = await db
+    .select({ id: schema.communityMembers.id })
+    .from(schema.communityMembers)
+    .where(
+      and(
+        eq(schema.communityMembers.userId, userId),
+        eq(schema.communityMembers.communityId, data.communityId),
+        eq(schema.communityMembers.status, "active")
+      )
+    )
+    .limit(1);
+  if (membership.length > 0) {
+    throw new TRPCError({ code: "CONFLICT", message: "You are already a member of this community" });
+  }
+
+  const existingSubscription = await db
+    .select({ id: schema.subscriptions.id })
+    .from(schema.subscriptions)
+    .where(
+      and(
+        eq(schema.subscriptions.userId, userId),
+        eq(schema.subscriptions.communityId, data.communityId),
+        eq(schema.subscriptions.status, "active")
+      )
+    )
+    .limit(1);
+  if (existingSubscription.length > 0) {
+    throw new TRPCError({ code: "CONFLICT", message: "You already have an active subscription to this community" });
   }
 
   const price = await stripe.prices.retrieve(priceId);
@@ -849,7 +889,11 @@ export async function getTransactionHistory(
 
   const conditions = [inArray(schema.payments.communityId, communityIds)];
   if (cursor) {
-    conditions.push(lt(schema.payments.paidAt, new Date(Number(cursor))));
+    const cursorTime = new Date(Number(cursor));
+    if (Number.isNaN(cursorTime.getTime())) {
+      throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid transaction cursor" });
+    }
+    conditions.push(lt(schema.payments.paidAt, cursorTime));
   }
 
   const rows = await db

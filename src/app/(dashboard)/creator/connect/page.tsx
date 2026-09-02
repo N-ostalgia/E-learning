@@ -89,7 +89,11 @@ export default function ConnectPage() {
           disabled={loading}
           className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-[#635bff] px-4 py-3 font-medium text-white hover:opacity-90 disabled:opacity-50"
         >
-          {loading ? "Creating link..." : "Connect with Stripe"}
+          {loading ? (
+            <span className="h-4 w-32 animate-pulse rounded bg-white/50" aria-label="Creating Stripe link" />
+          ) : (
+            "Connect with Stripe"
+          )}
           <FontAwesomeIcon icon={faArrowRight} className="h-4 w-4" />
         </button>
       </div>

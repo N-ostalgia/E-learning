@@ -4,7 +4,6 @@
 import { trpc } from "@/lib/trpc/react";
 import { CourseCard } from "./CourseCard";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 
 interface CourseListProps {
   communityId: string;
@@ -18,8 +17,10 @@ export function CourseList({ communityId, communitySlug }: CourseListProps) {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <FontAwesomeIcon icon={faSpinner} className="h-6 w-6 animate-spin text-[var(--color-text-secondary)]" />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="h-56 animate-pulse rounded-xl bg-[var(--color-border)]" />
+        ))}
       </div>
     );
   }

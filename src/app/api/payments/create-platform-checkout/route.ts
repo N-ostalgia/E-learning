@@ -2,6 +2,9 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/server/modules/auth/auth.config";
 import * as paymentService from "@/server/modules/payment/payment.service";
+import { z } from "zod";
+
+const checkoutInput = z.object({ plan: z.enum(["pro", "enterprise"]).default("pro") });
 
 export async function POST(request: Request) {
   try {
@@ -10,9 +13,8 @@ export async function POST(request: Request) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const body = await request.json();
-    const plan = (body.plan as string) || "pro";
-    const checkoutSession = await paymentService.createPlatformCheckout(session.user.id, plan as any);
+    const { plan } = checkoutInput.parse(await request.json());
+    const checkoutSession = await paymentService.createPlatformCheckout(session.user.id, plan);
     return NextResponse.json({ url: checkoutSession.url, id: checkoutSession.id });
   } catch (err: any) {
     console.error("create-platform-checkout error:", err);

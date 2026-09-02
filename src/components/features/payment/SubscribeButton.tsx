@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSpinner, faArrowRight } from "@fortawesome/free-solid-svg-icons";
+import { faArrowRight } from "@fortawesome/free-solid-svg-icons";
 
 interface SubscribeButtonProps {
   userId?: string;
@@ -48,10 +48,7 @@ export default function SubscribeButton({ userId }: SubscribeButtonProps) {
       className="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-6 py-3 font-medium text-white transition-all hover:bg-emerald-700 hover:shadow-lg hover:shadow-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-50"
     >
       {loading ? (
-        <>
-          <FontAwesomeIcon icon={faSpinner} className="h-4 w-4 animate-spin" />
-          Processing...
-        </>
+        <span className="h-4 w-28 animate-pulse rounded bg-white/50" aria-label="Processing subscription" />
       ) : (
         <>
           Subscribe to Pro

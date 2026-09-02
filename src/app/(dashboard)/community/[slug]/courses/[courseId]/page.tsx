@@ -89,8 +89,12 @@ export default function CourseDetailPage() {
   if (!course) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-12">
-        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center">
-          <p className="text-[var(--color-text-secondary)]">Loading...</p>
+        <div className="h-8 w-48 animate-pulse rounded bg-[var(--color-border)]" />
+        <div className="mt-6 h-56 animate-pulse rounded-xl bg-[var(--color-border)]" />
+        <div className="mt-8 space-y-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-16 animate-pulse rounded-lg bg-[var(--color-border)]" />
+          ))}
         </div>
       </div>
     );

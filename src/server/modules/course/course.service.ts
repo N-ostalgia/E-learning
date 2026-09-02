@@ -57,6 +57,30 @@ export async function getCourse(courseId: string, userId?: string) {
 
   const isOwner = community?.ownerId === userId;
 
+  const communityVisibility = await db
+    .select({ isPublic: communities.isPublic })
+    .from(communities)
+    .where(eq(communities.id, course.communityId))
+    .limit(1)
+    .then((r) => r[0]);
+  if (!communityVisibility?.isPublic && !isOwner) {
+    if (!userId) {
+      throw new TRPCError({ code: "FORBIDDEN", message: "Community membership required" });
+    }
+    const membership = await db
+      .select({ id: communityMembers.id })
+      .from(communityMembers)
+      .where(and(
+        eq(communityMembers.userId, userId),
+        eq(communityMembers.communityId, course.communityId),
+        eq(communityMembers.status, "active")
+      ))
+      .limit(1);
+    if (membership.length === 0) {
+      throw new TRPCError({ code: "FORBIDDEN", message: "Community membership required" });
+    }
+  }
+
   // Only owner can see unpublished courses
   if (course.isPublished !== true && !isOwner) {
     throw new TRPCError({
@@ -143,7 +167,9 @@ export async function getCourseWithLessons(courseId: string, userId?: string) {
   }
 
   const lessonsWithProgress = allLessons.map((lesson) => ({
-    ...lesson,
+    ...(!isOwner && course.price && course.price > 0 && !course.isEnrolled && !lesson.isFree
+      ? { ...lesson, content: null, videoUrl: null, videoKey: null, thumbnailUrl: null, thumbnailKey: null }
+      : lesson),
     progress: lessonProgressMap[lesson.id] || null,
     isCompleted: lessonProgressMap[lesson.id]?.completed || false,
     videoCompleted: lessonProgressMap[lesson.id]?.videoCompleted || false,
@@ -173,6 +199,19 @@ export async function listCourses(
   }
 
   const conditions = [eq(courses.communityId, communityId)];
+
+  const community = await db
+    .select({ isPublic: communities.isPublic })
+    .from(communities)
+    .where(eq(communities.id, communityId))
+    .limit(1)
+    .then((r) => r[0]);
+  if (!community) {
+    throw new TRPCError({ code: "NOT_FOUND", message: "Community not found" });
+  }
+  if (!community.isPublic && !isOwner) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "Community membership required" });
+  }
 
   // If user is NOT the owner, only show published courses
   // If user IS the owner, show ALL courses (drafts + published)
