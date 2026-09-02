@@ -678,9 +678,7 @@ export async function updateCommunity(
     category?: string | null;
     isPublic?: boolean;
     avatarUrl?: string;
-    avatarKey?: string;
     coverUrl?: string;
-    coverKey?: string;
   }
 ) {
   const community = await db
@@ -742,10 +740,13 @@ export async function getMyCommunities(userId: string): Promise<CommunityWithMem
 export async function updateCommunityPrice(userId: string, communityId: string, price: number | null) {
   const community = await db.select().from(communities).where(eq(communities.id, communityId)).limit(1).then(r => r[0]);
   if (!community) {
-    throw new Error("Community not found");
+    throw new TRPCError({ code: "NOT_FOUND", message: "Community not found" });
   }
   if (community.ownerId !== userId) {
-    throw new Error("Only the community owner can update the price");
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Only the community owner can update the price",
+    });
   }
 
   await db.update(communities).set({ price, updatedAt: new Date() }).where(eq(communities.id, communityId));

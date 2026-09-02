@@ -111,9 +111,7 @@ export default function CommunitySettingsPage() {
       category: category || undefined,
       isPublic,
       avatarUrl: avatarUrl || undefined,
-      avatarKey: avatarKey || undefined,
       coverUrl: coverUrl || undefined,
-      coverKey: coverKey || undefined,
     });
   };
 

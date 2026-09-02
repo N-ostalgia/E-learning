@@ -89,12 +89,12 @@ export const communityRouter = router({
   }),
   
   updatePrice: activeUserProcedure
-    .input(z.object({ communityId: z.string().min(1), price: z.number().min(0).nullable().optional() }))
+    .input(z.object({ communityId: z.string().min(1), price: z.number().finite().min(0).nullable().optional() }))
     .mutation(async ({ ctx, input }) => {
       return updateCommunityPrice(ctx.session.user.id, input.communityId, input.price ?? null);
     }),
 
-  // ✅ Update community settings (name, description, category, visibility, images)
+  // Update community settings (name, description, category, visibility, images)
   update: activeUserProcedure
     .input(
       z.object({
@@ -104,42 +104,12 @@ export const communityRouter = router({
         category: z.string().max(50).nullable().optional(),
         isPublic: z.boolean().optional(),
         avatarUrl: z.string().optional(),
-        avatarKey: z.string().optional(),
         coverUrl: z.string().optional(),
-        coverKey: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const { communityId, ...data } = input;
-      
-      const community = await db
-        .select()
-        .from(communities)
-        .where(eq(communities.id, communityId))
-        .limit(1)
-        .then((r) => r[0]);
-
-      if (!community) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Community not found" });
-      }
-
-      if (community.ownerId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Only the community owner can update settings",
-        });
-      }
-
-      const [updated] = await db
-        .update(communities)
-        .set({
-          ...data,
-          updatedAt: new Date(),
-        })
-        .where(eq(communities.id, communityId))
-        .returning();
-
-      return updated;
+      return updateCommunity(communityId, ctx.session.user.id, data);
     }),
 
   listMembers: activeUserProcedure
@@ -154,12 +124,9 @@ export const communityRouter = router({
       const userId = ctx.session.user.id;
       
       // Get community by ID directly
-      const community = await db
-        .select()
-        .from(communities)
-        .where(eq(communities.id, input.communityId))
-        .limit(1)
-        .then((r) => r[0]);
+      const community = await db.query.communities.findFirst({
+        where: (communities, { eq }) => eq(communities.id, input.communityId),
+      });
       
       if (!community) {
         throw new TRPCError({
