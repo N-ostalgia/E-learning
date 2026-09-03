@@ -156,7 +156,7 @@ export async function activatePlatformSubscription(
     });
   }
 
-  await db
+  await database
     .update(schema.users)
     .set({
       isPlatformSubscribed: true,

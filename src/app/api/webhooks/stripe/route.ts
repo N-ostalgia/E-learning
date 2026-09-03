@@ -25,6 +25,6 @@ export async function POST(request: Request) {
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown webhook error";
     console.error("Stripe webhook error:", message);
-    return new NextResponse(`Webhook Error: ${message}`, { status: 400 });
+    return new NextResponse("Webhook Error", { status: 400 });
   }
 }

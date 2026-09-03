@@ -309,7 +309,7 @@ export const payments = sqliteTable(
     creatorAmount: integer("creator_amount").notNull().default(0),
     currency: text("currency").notNull().default("usd"),
     status: text("status").notNull().default("pending"),
-    stripePaymentIntentId: text("stripe_payment_intent_id").unique(),
+    stripePaymentIntentId: text("stripe_payment_intent_id"),
     subscriptionId: text("subscription_id").references(() => subscriptions.id),
     payoutId: text("payout_id"),
     paidAt: integer("paid_at", { mode: "timestamp" }),
@@ -320,6 +320,9 @@ export const payments = sqliteTable(
     paymentsUserIdx: index("payments_user_idx").on(table.userId),
     paymentsCommunityIdx: index("payments_community_idx").on(table.communityId),
     paymentsCourseIdx: index("payments_course_idx").on(table.courseId),
+    stripePaymentIntentIdx: uniqueIndex("payments_stripe_payment_intent_id_unique").on(
+      table.stripePaymentIntentId
+    ),
   })
 );
 
@@ -772,6 +775,38 @@ export const quizGenerationJobs = sqliteTable(
     userIdIdx: index("qgj_user_id_idx").on(table.userId),
     statusIdx: index("qgj_status_idx").on(table.status),
   })
+);
+
+export const lessonNotesJobs = sqliteTable(
+  "lesson_notes_jobs",
+  {
+    id: text("id").primaryKey(),
+    lessonId: text("lesson_id").notNull().references(() => lessons.id, { onDelete: "cascade" }),
+    userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    status: text("status").notNull().default("pending"),
+    error: text("error"),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+    completedAt: integer("completed_at", { mode: "timestamp" }),
+  },
+  (table) => ({
+    lessonIdIdx: index("lnj_lesson_id_idx").on(table.lessonId),
+    userIdIdx: index("lnj_user_id_idx").on(table.userId),
+    statusIdx: index("lnj_status_idx").on(table.status),
+  })
+);
+
+export const lessonNotes = sqliteTable(
+  "lesson_notes",
+  {
+    id: text("id").primaryKey(),
+    lessonId: text("lesson_id").notNull().unique().references(() => lessons.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    summary: text("summary").notNull(),
+    keyConcepts: text("key_concepts").notNull(),
+    takeaways: text("takeaways").notNull(),
+    generatedAt: integer("generated_at", { mode: "timestamp" }).notNull(),
+  },
+  (table) => ({ lessonIdIdx: index("ln_lesson_id_idx").on(table.lessonId) })
 );
 // ---------- Relations ----------
 

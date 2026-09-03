@@ -183,19 +183,6 @@ export function Quiz({ lessonId, onComplete }: QuizProps) {
   const remainingAttempts = Math.max(0, maxAttempts - attemptsUsed);
   const hasTimeLimit = quiz?.timeLimit && quiz.timeLimit > 0;
 
-  //  If already passed, show success message
-  if (hasPassed) {
-    return (
-      <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-8 text-center">
-        <FontAwesomeIcon icon={faCheckCircle} className="h-12 w-12 text-emerald-500" />
-        <h3 className="mt-4 text-xl font-bold text-[var(--color-text-primary)]">Quiz Passed!</h3>
-        <p className="mt-2 text-[var(--color-text-secondary)]">
-          You have already completed this quiz successfully.
-        </p>
-      </div>
-    );
-  }
-
   //  If error is NOT_FOUND, show "No quiz" message
   if (error) {
     if (error.data?.code === "NOT_FOUND") {
@@ -319,6 +306,19 @@ export function Quiz({ lessonId, onComplete }: QuizProps) {
             Lesson complete! You can move to the next lesson.
           </div>
         )}
+      </div>
+    );
+  }
+
+  // Keep the detailed review visible immediately after a successful submission.
+  if (hasPassed) {
+    return (
+      <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-8 text-center">
+        <FontAwesomeIcon icon={faCheckCircle} className="h-12 w-12 text-emerald-500" />
+        <h3 className="mt-4 text-xl font-bold text-[var(--color-text-primary)]">Quiz Passed!</h3>
+        <p className="mt-2 text-[var(--color-text-secondary)]">
+          You have already completed this quiz successfully.
+        </p>
       </div>
     );
   }

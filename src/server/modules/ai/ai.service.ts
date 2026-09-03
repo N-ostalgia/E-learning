@@ -9,12 +9,17 @@ import {
   quizzes,
   quizQuestions,
   quizGenerationJobs,
+  lessonNotesJobs,
+  lessonNotes,
 } from "@/lib/db/schema";
 import { and, eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { randomUUID } from "crypto";
 import { enqueueQuizGeneration } from "@/lib/queue/quiz-generation.queue";
 import type { GeneratedQuiz } from "@/lib/ai/gemini";
+import { enqueueNotesGeneration } from "@/lib/queue/notes-generation.queue";
+import { canAccessLessonContent } from "@/server/modules/course/course.service";
+import type { GeneratedNotes } from "@/lib/ai/gemini";
 
 // Same owner-check pattern as course.service.ts, extended to also allow
 // community admins (your course.service.ts currently only checks
@@ -269,4 +274,44 @@ export async function discardQuizGenerationJob(userId: string, jobId: string) {
 
   await db.delete(quizGenerationJobs).where(eq(quizGenerationJobs.id, jobId));
   return { success: true };
+}
+
+export async function startNotesGeneration(userId: string, lessonId: string) {
+  const { lesson } = await getLessonWithPermissionCheck(lessonId, userId);
+  if (!lesson.videoUrl) throw new TRPCError({ code: "BAD_REQUEST", message: "This lesson doesn't have a video uploaded yet." });
+
+  const existing = await db.query.lessonNotesJobs.findFirst({
+    where: and(eq(lessonNotesJobs.lessonId, lessonId), eq(lessonNotesJobs.status, "pending")),
+  });
+  const processing = await db.query.lessonNotesJobs.findFirst({
+    where: and(eq(lessonNotesJobs.lessonId, lessonId), eq(lessonNotesJobs.status, "processing")),
+  });
+  if (existing || processing) return { jobId: (existing ?? processing)!.id };
+
+  const jobId = randomUUID();
+  await db.insert(lessonNotesJobs).values({ id: jobId, lessonId, userId, status: "pending", createdAt: new Date() });
+  await enqueueNotesGeneration({ jobId, lessonId, videoUrl: lesson.videoUrl, lessonTitle: lesson.title, lessonDescription: lesson.description ?? undefined });
+  return { jobId };
+}
+
+export async function getNotesGenerationJob(userId: string, jobId: string) {
+  const job = await db.query.lessonNotesJobs.findFirst({ where: eq(lessonNotesJobs.id, jobId) });
+  if (!job) throw new TRPCError({ code: "NOT_FOUND", message: "Notes job not found" });
+  await getLessonWithPermissionCheck(job.lessonId, userId);
+  return { status: job.status as "pending" | "processing" | "completed" | "failed", error: job.error };
+}
+
+export async function getLessonNotes(userId: string, lessonId: string) {
+  if (!(await canAccessLessonContent(userId, lessonId))) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "You do not have access to these lesson notes" });
+  }
+  const notes = await db.query.lessonNotes.findFirst({ where: eq(lessonNotes.lessonId, lessonId) });
+  if (!notes) return null;
+  return {
+    title: notes.title,
+    summary: notes.summary,
+    keyConcepts: JSON.parse(notes.keyConcepts) as GeneratedNotes["keyConcepts"],
+    takeaways: JSON.parse(notes.takeaways) as GeneratedNotes["takeaways"],
+    generatedAt: notes.generatedAt,
+  };
 }

@@ -1,11 +1,13 @@
 // src/server/modules/payment/payment.router.ts
 import { router, activeUserProcedure, adminProcedure } from "@/server/trpc/trpc";
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import * as paymentService from "./payment.service";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import Stripe from "stripe";
+import { consumeRateLimit, getClientIp } from "@/lib/rate-limit";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
   apiVersion: "2026-06-24.dahlia",
@@ -15,7 +17,11 @@ export const paymentRouter = router({
   course: router({
     checkout: activeUserProcedure
       .input(z.object({ courseId: z.string().min(1) }))
-      .mutation(async ({ ctx, input }) => paymentService.createCourseCheckout(ctx.session.user.id, input.courseId)),
+      .mutation(async ({ ctx, input }) => {
+        const result = consumeRateLimit(`checkout:${getClientIp(ctx.req)}:${ctx.session.user.id}`, 10, 15 * 60 * 1000);
+        if (!result.allowed) throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Too many checkout attempts. Please try again later." });
+        return paymentService.createCourseCheckout(ctx.session.user.id, input.courseId);
+      }),
   }),
   creator: router({
     onboarding: activeUserProcedure.mutation(async ({ ctx }) => {

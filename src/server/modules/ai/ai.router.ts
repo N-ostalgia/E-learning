@@ -7,6 +7,9 @@ import {
   getQuizGenerationJob,
   saveGeneratedQuiz,
   discardQuizGenerationJob,
+  startNotesGeneration,
+  getNotesGenerationJob,
+  getLessonNotes,
 } from "./ai.service";
 
 const questionInput = z.object({
@@ -54,4 +57,16 @@ export const aiRouter = router({
     .mutation(async ({ ctx, input }) => {
       return discardQuizGenerationJob(ctx.session.user.id, input.jobId);
     }),
+
+  generateNotes: protectedProcedure
+    .input(z.object({ lessonId: z.string().trim().min(1).max(100) }))
+    .mutation(async ({ ctx, input }) => startNotesGeneration(ctx.session.user.id, input.lessonId)),
+
+  getNotesJobStatus: protectedProcedure
+    .input(z.object({ jobId: z.string().trim().min(1).max(100) }))
+    .query(async ({ ctx, input }) => getNotesGenerationJob(ctx.session.user.id, input.jobId)),
+
+  getLessonNotes: protectedProcedure
+    .input(z.object({ lessonId: z.string().trim().min(1).max(100) }))
+    .query(async ({ ctx, input }) => getLessonNotes(ctx.session.user.id, input.lessonId)),
 });

@@ -1,3 +1,4 @@
+import { canAccessLessonContent } from "@/server/modules/course/course.service";
 // src/server/modules/quiz/quiz.router.ts
 import { router, protectedProcedure } from "@/server/trpc/trpc";
 import { TRPCError } from "@trpc/server";
@@ -27,6 +28,9 @@ export const quizRouter = router({
   getByLesson: protectedProcedure
     .input(z.object({ lessonId: z.string().min(1) }))
     .query(async ({ ctx, input }) => {
+      if (!(await canAccessLessonContent(ctx.session.user.id, input.lessonId))) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "You do not have access to this lesson quiz" });
+      }
       const quiz = await getQuizByLessonId(input.lessonId);
       if (!quiz) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Quiz not found" });

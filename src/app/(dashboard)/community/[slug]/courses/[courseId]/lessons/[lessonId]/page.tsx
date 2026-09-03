@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { useState } from "react";
 import { VideoPlayer } from "@/components/features/course/VideoPlayer";
 import { Quiz } from "@/components/features/course/Quiz";
+import { LessonNotes } from "@/components/features/course/LessonNotes";
 
 export default function LessonDetailPage() {
   const { slug, courseId, lessonId } = useParams<{
@@ -191,6 +192,12 @@ export default function LessonDetailPage() {
           </div>
         </div>
       )}
+
+      <LessonNotes
+        lessonId={lesson.id}
+        hasVideo={hasVideo}
+        isOwnerOrAdmin={isOwner}
+      />
 
       {isEnrolled && hasQuiz && isVideoComplete && (
         <div className="mt-8">

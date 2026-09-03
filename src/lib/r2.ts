@@ -41,6 +41,7 @@ function getR2Client(): { client: S3Client; config: R2Config } {
 export async function getPresignedUploadUrl(
   key: string,
   contentType: string,
+  contentLength: number,
   expiresIn = 3600
 ) {
   const { client, config } = getR2Client();
@@ -48,6 +49,7 @@ export async function getPresignedUploadUrl(
     Bucket: config.bucketName,
     Key: key,
     ContentType: contentType,
+    ContentLength: contentLength,
   });
 
   return getSignedUrl(client, command, { expiresIn });

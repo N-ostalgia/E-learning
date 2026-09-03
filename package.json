@@ -10,7 +10,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "ws:server": "node_modules\\.bin\\concurrently \"node websocket-server.cjs\" \"node_modules\\.bin\\tsx src/lib/queue/quiz-generation.worker.ts\""  },
+    "ws:server": "node_modules\\.bin\\concurrently \"node websocket-server.cjs\" \"node_modules\\.bin\\tsx src/lib/queue/quiz-generation.worker.ts\" \"node_modules\\.bin\\tsx src/lib/queue/notes-generation.worker.ts\""
+  },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1087.0",
     "@aws-sdk/s3-request-presigner": "^3.1087.0",
@@ -46,9 +47,12 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
     "@types/node": "^20.19.43",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitest/coverage-v8": "^5.0.0",
     "concurrently": "^10.0.5",
     "drizzle-kit": "^0.30.5",
     "eslint": "^9",
@@ -57,6 +61,7 @@
     "prettier": "^3.9.5",
     "tailwindcss": "^4",
     "tsx": "^4.23.13",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.0"
   }
 }

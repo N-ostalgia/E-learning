@@ -8,31 +8,7 @@ import {
   Svg,
   Path,
   Circle,
-  Font,
 } from "@react-pdf/renderer";
-
-/* ------------------------------------------------------------------ */
-/*  Fonts — Spectral (elegant serif) for headings/body, Great Vibes    */
-/*  (script) for the recipient name and signature, Helvetica for       */
-/*  small functional labels where legibility matters more than flair.  */
-/* ------------------------------------------------------------------ */
-Font.register({
-  family: "Spectral",
-  fonts: [
-    { src: "https://raw.githubusercontent.com/google/fonts/main/ofl/spectral/Spectral-Regular.ttf" },
-    { src: "https://raw.githubusercontent.com/google/fonts/main/ofl/spectral/Spectral-Italic.ttf", fontStyle: "italic" },
-    { src: "https://raw.githubusercontent.com/google/fonts/main/ofl/spectral/Spectral-Medium.ttf", fontWeight: 500 },
-    { src: "https://raw.githubusercontent.com/google/fonts/main/ofl/spectral/Spectral-SemiBold.ttf", fontWeight: 600 },
-    { src: "https://raw.githubusercontent.com/google/fonts/main/ofl/spectral/Spectral-Bold.ttf", fontWeight: 700 },
-  ],
-});
-
-Font.register({
-  family: "Great Vibes",
-  fonts: [
-    { src: "https://raw.githubusercontent.com/google/fonts/main/ofl/greatvibes/GreatVibes-Regular.ttf" },
-  ],
-});
 
 /* ------------------------------------------------------------------ */
 /*  Palette                                                            */
@@ -196,7 +172,7 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    fontFamily: "Spectral",
+    fontFamily: "Times-Roman",
     fontWeight: 600,
     fontSize: 37,
     color: INK,
@@ -205,7 +181,7 @@ const styles = StyleSheet.create({
   },
 
   presentedTo: {
-    fontFamily: "Spectral",
+    fontFamily: "Times-Roman",
     fontStyle: "italic",
     fontSize: 12,
     color: MUTED,
@@ -218,7 +194,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   recipientName: {
-    fontFamily: "Great Vibes",
+    fontFamily: "Times-Italic",
     fontSize: 52,
     color: INK,
   },
@@ -231,14 +207,14 @@ const styles = StyleSheet.create({
   },
 
   courseIntro: {
-    fontFamily: "Spectral",
+    fontFamily: "Times-Roman",
     fontStyle: "italic",
     fontSize: 12,
     color: MUTED,
     marginTop: 20,
   },
   courseName: {
-    fontFamily: "Spectral",
+    fontFamily: "Times-Roman",
     fontWeight: 700,
     fontSize: 21,
     color: INK,
@@ -246,7 +222,7 @@ const styles = StyleSheet.create({
     maxWidth: 430,
   },
   courseDesc: {
-    fontFamily: "Spectral",
+    fontFamily: "Times-Roman",
     fontWeight: 400,
     fontSize: 10.5,
     color: MUTED,
@@ -267,13 +243,13 @@ const styles = StyleSheet.create({
   footerBlock: { alignItems: "flex-start" },
   footerBlockRight: { alignItems: "flex-end" },
   footerValue: {
-    fontFamily: "Spectral",
+    fontFamily: "Times-Roman",
     fontStyle: "italic",
     fontSize: 14,
     color: INK,
   },
   footerValueScript: {
-    fontFamily: "Great Vibes",
+    fontFamily: "Times-Italic",
     fontSize: 24,
     color: INK,
   },

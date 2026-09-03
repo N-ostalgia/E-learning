@@ -1,5 +1,5 @@
 // src/server/modules/course/course.router.ts
-import { router, protectedProcedure } from "@/server/trpc/trpc";
+import { router, protectedProcedure, activeUserProcedure } from "@/server/trpc/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
@@ -151,7 +151,7 @@ export const courseRouter = router({
   // ENROLLMENT & PROGRESS
   // ============================
 
-  enroll: protectedProcedure
+  enroll: activeUserProcedure
     .input(z.object({ courseId: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
       return enrollInCourse(ctx.session.user.id, input.courseId);
@@ -163,13 +163,13 @@ export const courseRouter = router({
       return getEnrollment(ctx.session.user.id, input.courseId);
     }),
 
-  markLessonComplete: protectedProcedure
+  markLessonComplete: activeUserProcedure
     .input(z.object({ lessonId: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
       return markLessonComplete(ctx.session.user.id, input.lessonId);
     }),
 
-  updateLessonProgress: protectedProcedure
+  updateLessonProgress: activeUserProcedure
     .input(
       z.object({
         lessonId: z.string().min(1),
@@ -184,7 +184,7 @@ export const courseRouter = router({
   // VIDEO PROGRESS
   // ============================
 
-  updateProgress: protectedProcedure
+  updateProgress: activeUserProcedure
     .input(
       z.object({
         lessonId: z.string().min(1),
@@ -262,7 +262,7 @@ export const courseRouter = router({
   // MARK VIDEO COMPLETE (stays unlocked)
   // ============================
 
-  markVideoComplete: protectedProcedure
+  markVideoComplete: activeUserProcedure
     .input(z.object({ lessonId: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;

@@ -8,13 +8,30 @@ const envSchema = z.object({
   GROQ_API_KEY: z.string().min(1, "GROQ_API_KEY is required"),
   DATABASE_URL: z.string().optional(),
   REDIS_URL: z.string().optional(),
+  STRIPE_SECRET_KEY: z.string().min(1).optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
+  R2_ACCOUNT_ID: z.string().min(1).optional(),
+  R2_ACCESS_KEY_ID: z.string().min(1).optional(),
+  R2_SECRET_ACCESS_KEY: z.string().min(1).optional(),
+  R2_BUCKET_NAME: z.string().min(1).optional(),
+  R2_PUBLIC_URL: z.string().url().optional(),
+  NEXT_PUBLIC_PLATFORM_PRICE_ID: z.string().min(1).optional(),
   NEXT_PUBLIC_WS_URL: z.string().url().optional(),
   NEXT_PUBLIC_APP_URL: z.string().url().optional(),
   NEXT_PUBLIC_BETTER_AUTH_URL: z.string().url().optional(),
 });
 
 export function validateEnv() {
-  const result = envSchema.safeParse(process.env);
+  const requiredInProduction = [
+    "DATABASE_URL", "REDIS_URL", "STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET",
+    "R2_ACCOUNT_ID", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY", "R2_BUCKET_NAME",
+    "NEXT_PUBLIC_PLATFORM_PRICE_ID",
+  ];
+  const input = { ...process.env };
+  if (process.env.NODE_ENV === "production") {
+    for (const key of requiredInProduction) if (!input[key]) input[key] = "";
+  }
+  const result = envSchema.safeParse(input);
   if (!result.success) {
     const missing = result.error.issues.map((issue) => issue.path.join(".")).join(", ");
     console.error(`Invalid environment variables: ${missing}`);

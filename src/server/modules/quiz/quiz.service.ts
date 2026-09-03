@@ -42,6 +42,7 @@ export async function getQuizByLessonId(lessonId: string) {
       question: q.question,
       type: q.type,
       options: typeof q.options === "string" ? JSON.parse(q.options) : q.options || [],
+      explanation: q.explanation,
       order: q.order,
       sourceStartSeconds: q.sourceStartSeconds,
       sourceEndSeconds: q.sourceEndSeconds,
@@ -424,5 +425,5 @@ export async function getLatestQuizAttempt(userId: string, quizId: string) {
     )
     .orderBy(desc(quizAttempts.createdAt))
     .limit(1)
-    .then((r) => r[0]);
+    .then((r) => r[0] ?? null);
 }

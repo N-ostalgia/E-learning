@@ -30,7 +30,7 @@ export async function getCourse(courseId: string, userId?: string) {
       ...courseColumns,
       lessonCount: sql<number>`(SELECT COUNT(*) FROM lessons WHERE lessons.course_id = courses.id)`,
       isEnrolled: userId
-        ? sql<boolean>`EXISTS (SELECT 1 FROM course_enrollments WHERE course_enrollments.course_id = courses.id AND course_enrollments.user_id = ${userId})`
+    ? sql<boolean>`EXISTS (SELECT 1 FROM course_enrollments WHERE course_enrollments.course_id = courses.id AND course_enrollments.user_id = ${userId})`
         : sql<boolean>`0`,
       progress: userId
         ? sql<number>`(
@@ -116,6 +116,47 @@ export async function getCourse(courseId: string, userId?: string) {
     ...course,
     isOwner: isOwner || false,
   };
+}
+export async function canAccessLessonContent(userId: string, lessonId: string) {
+  const lesson = await db
+  .select({ courseId: lessons.courseId, communityId: courses.communityId, ownerId: communities.ownerId })
+  .from(lessons)
+  .innerJoin(courses, eq(courses.id, lessons.courseId))
+  .innerJoin(communities, eq(communities.id, courses.communityId))
+  .where(eq(lessons.id, lessonId))
+  .limit(1)
+  .then((rows) => rows[0]);
+
+  if (!lesson) return false;
+  if (lesson.ownerId === userId) return true;
+
+  const membership = await db
+  .select({ id: communityMembers.id, role: communityMembers.role })
+  .from(communityMembers)
+  .where(
+    and(
+    eq(communityMembers.userId, userId),
+    eq(communityMembers.communityId, lesson.communityId),
+    eq(communityMembers.status, "active")
+    )
+  )
+  .limit(1)
+  .then((rows) => rows[0]);
+
+  if (membership?.role === "admin") return true;
+
+  const enrollment = await db
+  .select({ id: courseEnrollments.id })
+  .from(courseEnrollments)
+  .where(
+    and(
+    eq(courseEnrollments.userId, userId),
+    eq(courseEnrollments.courseId, lesson.courseId)
+    )
+  )
+  .limit(1);
+
+  return enrollment.length > 0;
 }
 
 export async function getCourseWithLessons(courseId: string, userId?: string) {
@@ -836,19 +877,37 @@ export async function markLessonComplete(userId: string, lessonId: string) {
     });
   }
 
-  const now = new Date();
   const existing = await db
     .select()
     .from(lessonProgress)
-    .where(
-      and(
-        eq(lessonProgress.userId, userId),
-        eq(lessonProgress.lessonId, lessonId)
-      )
-    )
+    .where(and(eq(lessonProgress.userId, userId), eq(lessonProgress.lessonId, lessonId)))
     .limit(1)
     .then((r) => r[0]);
 
+  const videoComplete =
+    existing?.videoCompleted === true || (existing?.videoWatchedPercent ?? 0) >= 80;
+  if (!videoComplete) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "Watch at least 80% of the lesson video before completing this lesson",
+    });
+  }
+
+  const quiz = await db
+    .select({ id: quizzes.id })
+    .from(quizzes)
+    .where(eq(quizzes.lessonId, lessonId))
+    .limit(1)
+    .then((r) => r[0]);
+
+  if (quiz && existing?.quizPassed !== true) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "Pass the lesson quiz before completing this lesson",
+    });
+  }
+
+  const now = new Date();
   let progress;
   if (existing) {
     [progress] = await db

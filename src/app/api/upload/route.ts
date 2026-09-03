@@ -65,7 +65,7 @@ export async function POST(request: Request) {
     }
 
     const key = generateKey(session.user.id, `courses/${body.kind}`, body.fileName);
-    const uploadUrl = await getPresignedUploadUrl(key, body.contentType);
+    const uploadUrl = await getPresignedUploadUrl(key, body.contentType, body.fileSize);
 
     // Generate public URL
     const publicUrl = process.env.R2_PUBLIC_URL
